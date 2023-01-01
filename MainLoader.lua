@@ -1,4 +1,4 @@
-if _G.wl_key == nil or "" then
+if not _G.wl_key or _G.wl_key == "" then
     if rconsoleprint then
         rconsolename('Scourge; Verification; Dylan; Limo; ! 1 N O; Run; Infinity is gay nigga')
         rconsoleprint('@@RED@@')
@@ -14,5 +14,6 @@ if _G.wl_key == nil or "" then
         game:GetService('Players').LocalPlayer:Kick("You don't seem to have a key- You can get one from our discord, it's copied to your clipboard.")    
     end
 else
+    print('script')
     loadstring(game:HttpGet('https://scripts.luawl.com/Main/Scourge.lua'))()
 end
