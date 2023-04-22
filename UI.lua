@@ -229,7 +229,7 @@ end
 function Library.Load(LibConfig)
     LibConfig = LibConfig or {}
     LibConfig.Title = LibConfig.Title or "Title"
-    if not string.find(LibConfig.Title,"LKHUB") then while true do end return end
+    
     local MenuToggle = false
     local FirstTab = false
     
