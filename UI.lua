@@ -3,10 +3,11 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+local HttpService = game:GetService("HttpService") 
 
 local Library = {
     Connections = {}
-}
+}  
 
 local function AddConnection(Signal, Function)
 	if (not Library:IsRunning()) then return end
@@ -66,7 +67,16 @@ local function MakeDraggable(DragPoint, Main)
     end)
 end
 
+local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
 local BlacklistedKeys = {Enum.KeyCode.Unknown,Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D,Enum.KeyCode.Up,Enum.KeyCode.Left,Enum.KeyCode.Down,Enum.KeyCode.Right,Enum.KeyCode.Slash,Enum.KeyCode.Tab,Enum.KeyCode.Backspace,Enum.KeyCode.Escape}
+
+local function CheckKey(Table, Key)
+    for _, v in next, Table do
+        if v == Key then
+            return true
+        end
+    end
+end
 
 local function Ripple(Object)
     local Circle = Create("ImageLabel", {
@@ -86,6 +96,7 @@ local function Ripple(Object)
     end)
 end 
 
+
 local GUI = Create("ScreenGui", {
 	Parent = game:GetService("CoreGui")
 })
@@ -96,40 +107,35 @@ function Library:IsRunning()
 end
 
 task.spawn(function()
-	while (Library:IsRunning()) do task.wait() end
-	for i, Connection in pairs(Library.Connections) do Connection:Disconnect() end
+	while (Library:IsRunning()) do wait() end
+	for _, Connection in next, Library.Connections do Connection:Disconnect() end
 end)
 
-local NotificationHolder
+local NotificationHolder = Create("Frame", {
+    Position = UDim2.new(1, -15, 1, -15),
+    Size = UDim2.new(0, 230, 1, -15),
+	AnchorPoint = Vector2.new(1, 1),
+    BackgroundTransparency = 1,
+	Parent = GUI
+}, {
+    Create("UIListLayout", {
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        VerticalAlignment = Enum.VerticalAlignment.Bottom
+    })
+})
+
 
 function Library.Notification(NotificationConfig)
 	NotificationConfig.Title = NotificationConfig.Title or "Notification"
 	NotificationConfig.Content = NotificationConfig.Content or "Content"
 	NotificationConfig.Delay = NotificationConfig.Delay or 5
 
-    if not NotificationHolder then
-        NotificationHolder = Create("Frame", {
-            Position = UDim2.new(1, -15, 1, -15),
-            Size = UDim2.new(0, 230, 1, -15),
-            AnchorPoint = Vector2.new(1, 1),
-            BackgroundTransparency = 1,
-            Parent = GUI,
-            Name = "NotificationHolder"
-        }, {
-            Create("UIListLayout", {
-                HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                VerticalAlignment = Enum.VerticalAlignment.Bottom
-            })
-        })
-    end
-
     local NotificationBody = Create("TextButton", {
         Size = UDim2.new(1, 0, 0, 0),
 		BackgroundTransparency = 1,
         Text = "",
-		Parent = NotificationHolder,
-        ZIndex = 1001,
+		Parent = NotificationHolder
     })
 
     local DurationBar = Create("Frame", {
@@ -137,8 +143,7 @@ function Library.Notification(NotificationConfig)
         Size = UDim2.new(1, -24, 0, 3),
         Position = UDim2.new(0, 12, 1, -12),
         BackgroundColor3 = Color3.fromRGB(37, 37, 37),
-        BorderSizePixel = 0,
-        ZIndex = 1002,
+        BorderSizePixel = 0
     }, {
         Create("UICorner", {CornerRadius = UDim.new(0, 3)})
     })
@@ -147,8 +152,7 @@ function Library.Notification(NotificationConfig)
         Parent = NotificationBody,
         Size = UDim2.new(1, 0, 0, 0),
         Position = UDim2.new(1, 15, 0, 5),
-        BackgroundColor3 = Color3.fromRGB(27, 27, 27),
-        ZIndex = 1002,
+        BackgroundColor3 = Color3.fromRGB(27, 27, 27)
     }, {
         Create("UICorner", {CornerRadius = UDim.new(0, 8)}),
         Create("TextLabel", {
@@ -161,8 +165,7 @@ function Library.Notification(NotificationConfig)
             TextColor3 = Color3.fromRGB(180, 180, 180),
             TextSize = 13,
             RichText = true,
-            Name = "Title",
-            ZIndex = 1003,
+            Name = "Title"
         }),
         Create("TextLabel", {
             BackgroundTransparency = 1,
@@ -174,8 +177,7 @@ function Library.Notification(NotificationConfig)
             TextColor3 = Color3.fromRGB(180, 180, 180),
             TextSize = 13,
             RichText = true,
-            Name = "Time",
-            ZIndex = 1003,
+            Name = "Time"
         }),
         Create("TextLabel", {
             BackgroundTransparency = 1,
@@ -188,16 +190,14 @@ function Library.Notification(NotificationConfig)
             TextSize = 13,
             RichText = true,
             TextWrapped = true,
-            Name = "Content",
-            ZIndex = 1003,
+            Name = "Content"
         }),
         Create("Frame", {
             Parent = NotificationBody,
             Size = UDim2.new(1, -24, 0, 3),
             Position = UDim2.new(0, 12, 1, -12),
             BackgroundColor3 = Color3.fromRGB(32, 32, 32),
-            BorderSizePixel = 0,
-            ZIndex = 1003,
+            BorderSizePixel = 0
         }, {
             Create("UICorner", {CornerRadius = UDim.new(0, 3)})
         }),
@@ -207,7 +207,7 @@ function Library.Notification(NotificationConfig)
     spawn(function()
 		for i = NotificationConfig.Delay, 0, -1 do
 			NotificationFrame.Time.Text = i .. "s"
-			task.wait(1)
+			wait(1)
 		end
 	end)
 
@@ -222,17 +222,15 @@ function Library.Notification(NotificationConfig)
         delay(0.15, function()
             TweenService:Create(NotificationBody,TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),{Size = UDim2.new(1, 0, 0, 0)}):Play()
         end)
-        delay(5,function() NotificationBody:Destroy() end)
     end)
 end
 
 function Library.Load(LibConfig)
     LibConfig = LibConfig or {}
     LibConfig.Title = LibConfig.Title or "Title"
-    
     local MenuToggle = false
     local FirstTab = false
-    
+
     local ExitBtn = Create("TextButton", {
         BackgroundTransparency = 1,
         Position = UDim2.new(1, -34, 0, 4),
@@ -270,7 +268,7 @@ function Library.Load(LibConfig)
         TweenService:Create(ExitBtn.Hover, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0.8, 0, 0.8, 0), BackgroundTransparency = 1}):Play()
         TweenService:Create(ExitBtn.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageColor3 = Color3.fromRGB(180, 180, 180)}):Play()
     end)
-    AddConnection(ExitBtn.MouseButton1Click, function()
+ AddConnection(ExitBtn.MouseButton1Click, function()
         shared.NapkinLibrary:Destroy()
     end)
     
@@ -545,7 +543,6 @@ function Library.Load(LibConfig)
                     ButtonConfig = ButtonConfig or {}
                     ButtonConfig.Name = ButtonConfig.Name or "Button"
                     ButtonConfig.Callback = ButtonConfig.Callback or function() end
-                    local Button = {}
 
                     local ButtonFrame = Create("TextButton", {
                         BackgroundColor3 = Color3.fromRGB(28, 28, 28),
@@ -555,18 +552,17 @@ function Library.Load(LibConfig)
                         ClipsDescendants = true,
                         Text = ""
                     }, {
-                        Create("UICorner", {CornerRadius = UDim.new(0, 5)})
-                    })
-                    local textLabel = Create("TextLabel", {
-                        Parent = ButtonFrame,
-                        BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 10, 0, 0),
-                        Size = UDim2.new(1, -10, 1, 0),
-                        Font = Enum.Font.Gotham,
-                        TextColor3 = Color3.fromRGB(255, 255, 255),
-                        TextSize = 13,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        Text = ButtonConfig.Name
+                        Create("UICorner", {CornerRadius = UDim.new(0, 5)}),
+                        Create("TextLabel", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 10, 0, 0),
+                            Size = UDim2.new(1, -10, 1, 0),
+                            Font = Enum.Font.Gotham,
+                            TextColor3 = Color3.fromRGB(255, 255, 255),
+                            TextSize = 13,
+                            TextXAlignment = Enum.TextXAlignment.Left,
+                            Text = ButtonConfig.Name
+                        })
                     })
 
                     AddConnection(ButtonFrame.MouseEnter, function()
@@ -586,46 +582,10 @@ function Library.Load(LibConfig)
                         Ripple(ButtonFrame)
                         ButtonConfig.Callback()
                     end)
-
-                    function Button:Set(text)
-                        ButtonConfig.Name = text or "Button"
-                        textLabel.Text = ButtonConfig.Name
-                    end
-
-                    return Button
-                end,
-                AddLabel = function(LabelConfig)
-                    LabelConfig = LabelConfig or {}
-                    LabelConfig.Text = LabelConfig.Text or 'TextLabel'
-
-                    local TextFrame = Create("TextLabel", {
-                        BackgroundColor3 = Color3.fromRGB(28, 28, 28),
-                        Size = UDim2.new(1, 0, 0, 32),
-                        Parent = SectionContainer,
-                        ClipsDescendants = true,
-                        Font = Enum.Font.Gotham,
-                        TextColor3 = Color3.fromRGB(255, 255, 255),
-                        TextSize = 13,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                        Text = LabelConfig.Text
-                    }, {
-                        Create("UICorner", {CornerRadius = UDim.new(0, 5)})
-                    })
-
-                    local Text = {Value = LabelConfig.Text, Type = ('Text')}
-
-                    function Text:Set(arg)
-                        self.Value = arg
-                        LabelConfig.Text = self.Value
-                        TextFrame.Text = self.Value
-                    end
-
-                    return Text
                 end,
                 AddToggle = function(ToggleConfig)
                     ToggleConfig = ToggleConfig or {}
                     ToggleConfig.Name = ToggleConfig.Name or "Toggle"
-                    ToggleConfig.IgnoreFirst = ToggleConfig.IgnoreFirst or false
                     ToggleConfig.Default = ToggleConfig.Default or false
                     ToggleConfig.Callback = ToggleConfig.Callback or function() end
 
@@ -702,14 +662,14 @@ function Library.Load(LibConfig)
                         Toggle:Set(not Toggle.Value)
                     end)
 
-                    function Toggle:Set(Value,ignore)
+                    function Toggle:Set(Value)
                         self.Value = Value
                         TweenService:Create(TogglePopUp, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),{BackgroundTransparency = self.Value and 0 or 1, Size = self.Value and UDim2.new(1, 0, 1, 0) or UDim2.new(0.5, 0, 0.5, 0)}):Play()
                         TweenService:Create(TogglePopUp.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),{ImageTransparency = self.Value and 0 or 1}):Play()
-                        if not ignore then return ToggleConfig.Callback(self.Value) end
+                        return ToggleConfig.Callback(self.Value)
                     end
     
-                    Toggle:Set(Toggle.Value,ToggleConfig.IgnoreFirst)
+                    Toggle:Set(Toggle.Value)
                     return Toggle
                 end,
                 AddSlider = function(SliderConfig)
@@ -719,7 +679,6 @@ function Library.Load(LibConfig)
                     SliderConfig.Max = SliderConfig.Max or 20
                     SliderConfig.Increment = SliderConfig.Increment or 1
                     SliderConfig.Default = SliderConfig.Default or 0
-                    SliderConfig.IgnoreFirst = SliderConfig.IgnoreFirst or false
                     SliderConfig.Callback = SliderConfig.Callback or function() end
 
                     local Slider = {Value = SliderConfig.Default, Type = "Slider"}
@@ -812,15 +771,15 @@ function Library.Load(LibConfig)
                     end)
     
 
-                    function Slider:Set(Value,ignore)
+                    function Slider:Set(Value)
                         self.Value = math.clamp(Round(Value, SliderConfig.Increment), SliderConfig.Min, SliderConfig.Max)
                         ValueText.Text = tostring(self.Value)
                         TweenService:Create(SliderDot,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Position = UDim2.new((self.Value - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), -6, 0.5, -6)}):Play()
                         TweenService:Create(SliderProgress,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = UDim2.fromScale((self.Value - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), 1)}):Play()
-                        if not ignore then return SliderConfig.Callback(self.Value) end
+                        return SliderConfig.Callback(self.Value)
                     end   
     
-                    Slider:Set(Slider.Value,SliderConfig.IgnoreFirst)
+                    Slider:Set(Slider.Value)
                     return Slider
                 end,
                 AddDropdown = function(DropdownConfig)    
@@ -828,18 +787,15 @@ function Library.Load(LibConfig)
                     DropdownConfig.Name = DropdownConfig.Name or "Dropdown"
                     DropdownConfig.Options = DropdownConfig.Options or {}
                     DropdownConfig.Default = DropdownConfig.Default or ""
-                    DropdownConfig.IgnoreFirst = DropdownConfig.IgnoreFirst or false
-                    DropdownConfig.Multiple = DropdownConfig.Multiple or false
-                    DropdownConfig.MaxOptions = DropdownConfig.MaxOptions or math.huge
-
+                    DropdownConfig.Flag = DropdownConfig.Flag or nil
                     DropdownConfig.Callback = DropdownConfig.Callback or function() end
 
                     local Dropdown = {Value = DropdownConfig.Default, Options = DropdownConfig.Options, Buttons = {}, Toggled = false, Type = "Dropdown"}
                     local MaxElements = 5
 
-                    -- if not table.find(Dropdown.Options, Dropdown.Value) then
-                    --     Dropdown.Value = "..."
-                    -- end
+                    if not table.find(Dropdown.Options, Dropdown.Value) then
+                        Dropdown.Value = "..."
+                    end
 
                     local DropdownLayout = Create("UIListLayout")
 
@@ -971,48 +927,27 @@ function Library.Load(LibConfig)
                         AddOptions(Dropdown.Options)
                     end  
                     
-                    function Dropdown:Set(Value,ignore)
-                        if DropdownConfig.Multiple then
-                            if type(Dropdown.Value) ~= "table" then Dropdown.Value = {Dropdown.Value} end
-                            if table.find(Dropdown.Value,Value) then
-                                table.remove(Dropdown.Value,table.find(Dropdown.Value,Value))
-                            else
-                                if #Dropdown.Value < (DropdownConfig.MaxOptions or math.huge) then
-                                    table.insert(Dropdown.Value,Value)
-                                end
-                            end
-                        else
-                            Dropdown.Value = Value
-                        end
-                        
-                        local found = DropdownConfig.Multiple and true or table.find(Dropdown.Options, Value)
-                        if DropdownConfig.Multiple then
-                            for i1,v1 in pairs(Dropdown.Value) do if not table.find(Dropdown.Options, v1) then table.remove(Dropdown.Value,i1) end end
-                            if #Dropdown.Value < 1 then found = false end
-                        end
-                        if not found then
-                            Dropdown.Value = DropdownConfig.Multiple and {} or "..."
-                            ValueText.Text = "..."
+                    function Dropdown:Set(Value)
+                        if not table.find(Dropdown.Options, Value) then
+                            Dropdown.Value = "..."
+                            ValueText.Text = Dropdown.Value
                             for _, v in pairs(Dropdown.Buttons) do
                                 TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 1}):Play()
                                 TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0.4}):Play()
-                            end
+                            end	
                             return
                         end
-                        
-                        ValueText.Text = DropdownConfig.Multiple and table.concat(Dropdown.Value,", ") or Dropdown.Value
     
-                        for i, v in pairs(Dropdown.Buttons) do
-                            if (DropdownConfig.Multiple and table.find(Dropdown.Value,i)) or (not DropdownConfig.Multiple and i == Value) then
-                                TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 0}):Play()
-                                TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0}):Play()
-                            else
-                                TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 1}):Play()
-                                TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0.4}):Play()
-                            end
-                        end
-
-                        if not ignore then return DropdownConfig.Callback(Dropdown.Value) end
+                        Dropdown.Value = Value
+                        ValueText.Text = Dropdown.Value
+    
+                        for _, v in pairs(Dropdown.Buttons) do
+                            TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 1}):Play()
+                            TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0.4}):Play()
+                        end	
+                        TweenService:Create(Dropdown.Buttons[Value],TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 0}):Play()
+                        TweenService:Create(Dropdown.Buttons[Value].Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0}):Play()
+                        return DropdownConfig.Callback(Dropdown.Value)
                     end
 
                     AddConnection(DropdownBtn.MouseButton1Click, function()
@@ -1026,7 +961,7 @@ function Library.Load(LibConfig)
                     end)
 
                     Dropdown:Refresh(Dropdown.Options, false)
-                    Dropdown:Set(Dropdown.Value,DropdownConfig.IgnoreFirst)
+                    Dropdown:Set(Dropdown.Value)
                     return Dropdown
                 end,
                 AddBind = function(BindConfig)
@@ -1035,7 +970,6 @@ function Library.Load(LibConfig)
                     BindConfig.Flag = BindConfig.Flag or nil
                     BindConfig.Hold = BindConfig.Hold or false
                     BindConfig.Callback = BindConfig.Callback or function() end
-                    BindConfig.ChangeCallback = BindConfig.ChangeCallback or function() end
     
                     local Bind = {Value, Binding = false, Type = "Bind"}
                     local Holding = false
@@ -1094,15 +1028,15 @@ function Library.Load(LibConfig)
                         elseif Bind.Binding then
                             local Key
                             pcall(function()
-                                if not table.find(BlacklistedKeys, Input.KeyCode) then
+                                if not CheckKey(BlacklistedKeys, Input.KeyCode) then
                                     Key = Input.KeyCode
                                 end
                             end)
-                            -- pcall(function()
-                            --     if CheckKey(WhitelistedMouse, Input.UserInputType) and not Key then
-                            --         Key = Input.UserInputType
-                            --     end
-                            -- end)
+                            pcall(function()
+                                if CheckKey(WhitelistedMouse, Input.UserInputType) and not Key then
+                                    Key = Input.UserInputType
+                                end
+                            end)
                             Key = Key or Bind.Value
                             Bind:Set(Key)
                         end
@@ -1122,7 +1056,6 @@ function Library.Load(LibConfig)
                         Bind.Value = Key or Bind.Value
                         Bind.Value = Bind.Value.Name or Bind.Value
                         ValueText.Text = Bind.Value
-                        BindConfig.ChangeCallback(Bind.Value)
                     end
     
                     Bind:Set(BindConfig.Default)
@@ -1130,6 +1063,34 @@ function Library.Load(LibConfig)
                         Library.Flags[BindConfig.Flag] = Bind
                     end
                     return Bind
+                end,
+                AddLabel = function(LabelConfig)
+                    LabelConfig = LabelConfig or {}
+                    LabelConfig.Text = LabelConfig.Text or 'TextLabel'
+
+                    local TextFrame = Create("TextLabel", {
+                        BackgroundColor3 = Color3.fromRGB(28, 28, 28),
+                        Size = UDim2.new(1, 0, 0, 28),
+                        Parent = SectionContainer,
+                        ClipsDescendants = true,
+                        Font = Enum.Font.Gotham,
+                        TextColor3 = Color3.fromRGB(255, 255, 255),
+                        TextSize = 11,
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                        Text = LabelConfig.Text
+                    }, {
+                        Create("UICorner", {CornerRadius = UDim.new(0, 5)})
+                    })
+
+                    local Text = {Value = LabelConfig.Text, Type = ('Text')}
+
+                    function Text:Set(arg)
+                        self.Value = arg
+                        LabelConfig.Text = self.Value
+                        TextFrame.Text = self.Value
+                    end
+
+                    return Text
                 end,
                 AddColorpicker = function(ColorpickerConfig)
                     ColorpickerConfig = ColorpickerConfig or {}
@@ -1321,6 +1282,7 @@ function Library.Load(LibConfig)
                     TextboxConfig.Name = TextboxConfig.Name or "Textbox"
                     TextboxConfig.Default = TextboxConfig.Default or ""
                     TextboxConfig.TextDisappear = TextboxConfig.TextDisappear or false
+                    TextboxConfig.Flag = TextboxConfig.Flag or nil
                     TextboxConfig.Callback = TextboxConfig.Callback or function() end
 
                     local TextboxActual = Create("TextBox", {
